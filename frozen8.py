@@ -17,7 +17,7 @@ class FunctionFamily(object):
 			return theta[s,a]
 
 
-def cache(Buffer,sars,finite = False, NBuffer = 3000):
+def cache(Buffer,sars,finite = False, NBuffer = 5000):
 	if Buffer == None:
 		return []
 	else:
@@ -29,7 +29,7 @@ def cache(Buffer,sars,finite = False, NBuffer = 3000):
 
 def act(J,A,l,method = 'epsgreedy'):
 	# if method == 'epsgreedy':
-	eps = 1/(l+1)
+	eps = 1000000/(l+1)**2
 	p = np.random.rand()
 	if p<eps:
 		a = np.random.choice(range(A))
@@ -68,9 +68,9 @@ def learn(Q,Buffer,thetatilde,method = 'lsvi'):
 			 Lambda/1000*np.identity(X.shape[1])),X.T),y).reshape(Q.dim)
 
 	if method == 'lsvi_td':
-		alpha = 0.2 # learning rate
-		gamma = 0.95 # discount factor
-		Nbatch = min(100,len(Buffer))
+		alpha = 0.1 # learning rate
+		gamma = 0.99 # discount factor
+		Nbatch = min(400,len(Buffer))
 		batchindex = np.random.randint(len(Buffer),size = Nbatch)
 		Buffer = np.array(Buffer,dtype = int)
 		batch = Buffer[batchindex,:]
@@ -82,7 +82,7 @@ def learn(Q,Buffer,thetatilde,method = 'lsvi'):
 
 
 def live():
-	NEpisodes = 7000 # Number of episodes
+	NEpisodes = 20000 # Number of episodes
 
 	env = gym.make('FrozenLake8x8-v0')
 	reward_ep = list()
