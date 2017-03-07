@@ -27,9 +27,9 @@ def cache(Buffer,sars,finite = False, NBuffer = 1000):
 				Buffer.pop(0)
 	return Buffer
 
-def act(J,A,method = 'epsgreedy'):
+def act(J,A,l,method = 'epsgreedy'):
 	# if method == 'epsgreedy':
-	eps = 0.05
+	eps = 0.01/(l+1)
 	p = np.random.rand()
 	if p<eps:
 		a = np.random.choice(range(A))
@@ -46,25 +46,38 @@ def learn(Q,Buffer,thetatilde,method = 'lsvi'):
 	'''
 	lsvi + linear function with full dimension + theta_hat = 0
 	'''
-	H = 8
-	v = 1
-	NData = len(Buffer)
-	Lambda = v/1.
-	# theta = np.zeros(Q.dim) # initialization of theta
-	theta = thetatilde
-	thetaLen = Q.dim[0]*Q.dim[1]
-	for h in range(H):
-		y = np.zeros(NData)
-		X = np.zeros((NData,thetaLen))
-		# construct the data (y,X)
-		for n in xrange(NData):
-			y[n] = Buffer[n][2] + max(theta[Buffer[n][3]])
-			x = np.zeros(Q.dim)
-			x[Buffer[n][0],Buffer[n][1]] = 1
-			X[n,:] = x.reshape(thetaLen)
-		# do linear regression update
-		theta = np.dot(np.dot(np.linalg.inv(np.dot(X.T,X) + \
-		 Lambda*np.identity(X.shape[1])),X.T),y).reshape(Q.dim)
+	if method == 'lsvi':
+		H = 3
+		v = 1
+		NData = len(Buffer)
+		Lambda = v/1.
+		# theta = np.zeros(Q.dim) # initialization of theta
+		theta = thetatilde
+		thetaLen = Q.dim[0]*Q.dim[1]
+		for h in range(H):
+			y = np.zeros(NData)
+			X = np.zeros((NData,thetaLen))
+			# construct the data (y,X)
+			for n in xrange(NData):
+				y[n] = Buffer[n][2] + 0.99*max(theta[Buffer[n][3]])
+				x = np.zeros(Q.dim)
+				x[Buffer[n][0],Buffer[n][1]] = 1
+				X[n,:] = x.reshape(thetaLen)
+			# do linear regression update
+			theta = np.dot(np.dot(np.linalg.inv(np.dot(X.T,X) + \
+			 Lambda/1000*np.identity(X.shape[1])),X.T),y).reshape(Q.dim)
+
+	if method == 'lsvi_td':
+		alpha = 0.6 # learning rate
+		gamma = 0.95 # discount factor
+		Nbatch = min(40,len(Buffer))
+		batchindex = np.random.randint(len(Buffer),size = Nbatch)
+		Buffer = np.array(Buffer,dtype = int)
+		batch = Buffer[batchindex,:]
+		theta = thetatilde
+		for i in range(Nbatch):
+			theta[Buffer[i][0],Buffer[i][1]] += alpha*(Buffer[i][2] + \
+				gamma*np.max(theta[Buffer[i][3],:]) - theta[Buffer[i][0],Buffer[i][1]])
 	return theta
 
 
@@ -86,12 +99,12 @@ def live():
 		done = False
 		rewared_thisep = 0
 		while not done:
-			a = act(lambda a:Q.map(s,a,theta),env.action_space.n)
+			a = act(lambda a:Q.map(s,a,theta),env.action_space.n,l)
 			sprime, r, done, _ = env.step(a)
 			Buffer = cache(Buffer,(s,a,r,sprime),finite = True)
 			s = sprime
 			rewared_thisep += r
-		theta = learn(Q,Buffer,theta)
+		theta = learn(Q,Buffer,theta,method = 'lsvi_td')
 		reward_ep.append(rewared_thisep)
 		reward_per_ep.append(np.mean(reward_ep[np.max(len(reward_ep)-100,0):-1]))
 		print l,rewared_thisep
