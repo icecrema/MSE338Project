@@ -104,7 +104,7 @@ def cache(Buffer,sars,finite = False, NBuffer = gNbuffer):
 
 def act(J,A,l,method = 'epsgreedy'):
 	# if method == 'epsgreedy':
-	# eps = 100000/(l+1)**2
+	eps = 100000/(l+1)**2
 	eps = 0.01
 	p = np.random.rand()
 	if p<eps:

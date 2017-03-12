@@ -59,7 +59,7 @@ def learn(Q,Buffer,thetatilde,method = 'lsvi'):
 			X = np.zeros((NData,thetaLen))
 			# construct the data (y,X)
 			for n in xrange(NData):
-				y[n] = Buffer[n][2] + 0.99*max(theta[Buffer[n][3]])
+				y[n] = Buffer[n][2] + max(theta[Buffer[n][3]])
 				x = np.zeros(Q.dim)
 				x[Buffer[n][0],Buffer[n][1]] = 1
 				X[n,:] = x.reshape(thetaLen)
@@ -68,16 +68,16 @@ def learn(Q,Buffer,thetatilde,method = 'lsvi'):
 			 Lambda/1000*np.identity(X.shape[1])),X.T),y).reshape(Q.dim)
 
 	if method == 'lsvi_td':
-		alpha = 0.1 # learning rate
-		gamma = 0.99 # discount factor
+		alpha = 0.05 # learning rate
+		gamma = 0.95 # discount factor
 		Nbatch = min(400,len(Buffer))
 		batchindex = np.random.randint(len(Buffer),size = Nbatch)
 		Buffer = np.array(Buffer,dtype = int)
 		batch = Buffer[batchindex,:]
 		theta = thetatilde
 		for i in range(Nbatch):
-			theta[Buffer[i][0],Buffer[i][1]] += alpha*(Buffer[i][2] + \
-				gamma*np.max(theta[Buffer[i][3],:]) - theta[Buffer[i][0],Buffer[i][1]])
+			theta[batch[i][0],batch[i][1]] += alpha*(batch[i][2] + \
+				gamma*np.max(theta[batch[i][3],:]) - theta[batch[i][0],batch[i][1]])
 	return theta
 
 
