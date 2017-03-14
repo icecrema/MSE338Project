@@ -7,15 +7,15 @@ from scipy.special import expit
 
 global gNbuffer, gNbatch, gNEpisodes, gNtrials, gepsilon, gH, gLam, ggamma, galpha
 
-gNEpisodes = 1000 # Number of episodes
-gNtrials = 10 # number of trials
-gNbuffer = 300
-gNbatch = 5
+gNEpisodes = 2000 # Number of episodes
+gNtrials = 5 # number of trials
+gNbuffer = 5000
+gNbatch = 30
 gepsilon = 0.001
-gH = 10
+gH = 30
 gLam = 1
 ggamma = 0.95
-galpha = 0.2
+galpha = 0.1
 
 class FunctionFamily(object):
 
@@ -49,6 +49,7 @@ class MLP(FunctionFamily):
 	def getinput(self,s,a):
 		# translating the state-action pair to input
 		invec = np.zeros(self.Nin)
+
 		invec[:len(s)] = s
 		invec[len(s)+a] = 1
 		return invec
@@ -178,7 +179,7 @@ gamma = ggamma, alpha = galpha, method = 'lsvi',batchtype = 'random'):
 	if method == 'lsvi_td':
 		# alpha = 0.2 # learning rate
 		# gamma = 0.95 # discount factor
-		temperature = 100000 # control the probability of weighted sampling
+		temperature = 1 # control the probability of weighted sampling
 		Nbatch = min(Nbatch,len(Buffer)) # batch number
 		Buffer = np.array(Buffer,dtype = int)
 		if batchtype == 'random':
@@ -187,10 +188,11 @@ gamma = ggamma, alpha = galpha, method = 'lsvi',batchtype = 'random'):
 		if batchtype == 'weighted_random':
 			# generate the probability according to the reward
 			R = Buffer[:,2]
-			p = expit(R/temperature)
-			p = p/np.sum(p)
-			batchindex = np.random.choice(range(len(Buffer)),size = Nbatch, replace = False, p =p)
-			batch = Buffer[batchindex,:]
+			# p = expit(expit(abs(R))*np.array(range(len(Buffer[:,2])))**2/temperature)
+			# p = p/np.sum(p)
+			# batchindex = np.random.choice(range(len(Buffer)),size = Nbatch, replace = False, p =p)
+			# batch = Buffer[batchindex,:]
+			batch = Buffer[-Nbatch:,:]
 		if Q.type == 'linear':
 			theta = np.copy(thetatilde)
 			for i in range(Nbatch):
@@ -234,7 +236,7 @@ def live_1_scale(env,Q):
 			theta = learn(Q,Buffer,theta,l,method = 'lsvi',batchtype = 'random')
 			reward_ep.append(rewared_thisep)
 			reward_per_ep.append(np.mean(reward_ep[np.max([len(reward_ep)-100,0]):]))
-			# print l,rewared_thisep
+			print l,rewared_thisep
 		print trial
 		rewared_per_ep_ave += np.array(reward_per_ep)
 	rewared_per_ep_ave = rewared_per_ep_ave/gNtrials
@@ -281,7 +283,7 @@ def live_1_scale(env,Q):
 
 def live_2_lsvi_H(env,Q):
 
-	disc_H = [1,5,10,20,50]
+	disc_H = [5,10,20,50]
 
 	colormap = plt.cm.gist_ncar
 	plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, len(disc_H))])
@@ -343,7 +345,7 @@ def live_2_lsvi_H(env,Q):
 
 def live_3_lsvi_buffersize(env,Q):
 
-	disc_Nbuffer = [50,200,500,1000,5000]
+	disc_Nbuffer = [200,500,1000,5000]
 
 	colormap = plt.cm.gist_ncar
 	plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, len(disc_Nbuffer))])
@@ -434,12 +436,12 @@ def live_4_lsvi_lambda(env,Q):
 def live_5_lsvitd_batchsize(env,Q):
 
 	# fix batchsize
-	# disc_buffer = [10,50,500,1000]
-	# disc_batch = [5,5,5,5]
+	# disc_buffer = [20,100,1000,5000]
+	# disc_batch = [10,10,10,10]
 
 	# fix buffersize
-	disc_buffer = [1000,1000,1000,1000]
-	disc_batch = [5,50,300,800]
+	disc_buffer = [5000,5000,5000,5000]
+	disc_batch = [10,100,800,4000]
 
 	colormap = plt.cm.gist_ncar
 	plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, len(disc_buffer))])
@@ -568,7 +570,7 @@ def live_7_lsvitd_alpha(env,Q):
 	plt.xlabel('episode')
 	plt.ylabel('averaged reward')
 	plt.legend(labels,loc=2)
-	plt.savefig('7_lsvi_td_alpha_2', bbox_inches='tight')
+	plt.savefig('7_lsvi_td_alpha_1', bbox_inches='tight')
 	# plt.show()
 	return
 
@@ -672,7 +674,7 @@ def live(env,Q):
 			done = False
 			rewared_thisep = 0
 			while not done:
-				a = act(lambda a:Q.map(s,a,theta),env.action_space.n,l)
+				a = act(lambda a:Q.map(s,a,theta),env.action_space.n,l,adaptive = False)
 				sprime, r, done, _ = env.step(a)
 				if done and r ==0:
 					Buffer = cache(Buffer,(s,a,-1,sprime),finite = True)
@@ -680,10 +682,10 @@ def live(env,Q):
 					Buffer = cache(Buffer,(s,a,r,sprime),finite = True)
 				s = sprime
 				rewared_thisep += r
-			theta = learn(Q,Buffer,theta,l, method = 'grlsvi',batchtype = 'random')
+			theta = learn(Q,Buffer,theta,l, method = 'lsvi_td',batchtype = 'random')
 			reward_ep.append(rewared_thisep)
 			reward_per_ep.append(np.mean(reward_ep[np.max([len(reward_ep)-100,0]):]))
-			print l,rewared_thisep
+			# print l,rewared_thisep
 		print trial
 		rewared_per_ep_ave += np.array(reward_per_ep)
 	rewared_per_ep_ave = rewared_per_ep_ave/gNtrials
@@ -693,7 +695,7 @@ def live(env,Q):
 
 	return
 
-env = gym.make('FrozenLake-v0')
+env = gym.make('FrozenLake8x8-v0')
 Q = FunctionFamily()
 Q.type = 'linear'
 Q.dim = (env.observation_space.n,env.action_space.n)

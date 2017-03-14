@@ -1,0 +1,20 @@
+live_1_lsvi_scaling: lsvi, eps = 0.001, Nbuffer = 1000, H = 30, lam = 1, trials = 10
+
+live_2_lsvi_H: lsvi, eps = 0.001. Nbuffer = 300, lam = 1
+
+live_3_lsvi_buffersize: lsvi, eps = 0.001, H =10, lam = 1
+
+live_4_lsvi_lambda: lsvi, eps = 0.001, H = 10, Nbuffer = 300
+
+
+
+
+live_5_lsvitd_batchsize: lsvi_td, eps = 0.001, alpha = 0.1, gamma = 0.95
+
+live_6_lsvitd_gamma: lsvi_td, eps = 0.001, alpha = 0.1, Nbuffer = 20, Nbatch = 10
+
+live_7_lsvitd_alpha: lsvi_td, eps = 0.001, gamma = 0.95, Nbuffer = 10, Nbatch = 5
+				lsvi_td, eps = 0.001, gamma = 0.95, Nbuffer = 1000, Nbatch = 100
+
+live_101_act_eps: lsvi_td, eps = 0.001, gamma = 0.95, Nbuffer = 10, Nbatch = 5
+			lsvi, H = 10, Nbuffer = 300, lam = 1

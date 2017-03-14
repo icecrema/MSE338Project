@@ -7,15 +7,15 @@ from scipy.special import expit
 
 global gNbuffer, gNbatch, gNEpisodes, gNtrials, gepsilon, gH, gLam, ggamma, galpha
 
-gNEpisodes = 1000 # Number of episodes
-gNtrials = 10 # number of trials
-gNbuffer = 300
-gNbatch = 5
+gNEpisodes = 2000 # Number of episodes
+gNtrials = 30 # number of trials
+gNbuffer = 20
+gNbatch = 10
 gepsilon = 0.001
-gH = 10
+gH = 30
 gLam = 1
 ggamma = 0.95
-galpha = 0.2
+galpha = 0.1
 
 class FunctionFamily(object):
 
@@ -234,7 +234,7 @@ def live_1_scale(env,Q):
 			theta = learn(Q,Buffer,theta,l,method = 'lsvi',batchtype = 'random')
 			reward_ep.append(rewared_thisep)
 			reward_per_ep.append(np.mean(reward_ep[np.max([len(reward_ep)-100,0]):]))
-			# print l,rewared_thisep
+			print l,rewared_thisep
 		print trial
 		rewared_per_ep_ave += np.array(reward_per_ep)
 	rewared_per_ep_ave = rewared_per_ep_ave/gNtrials
@@ -275,13 +275,12 @@ def live_1_scale(env,Q):
 	plt.ylabel('averaged reward')
 	plt.legend(labels,loc=2)
 	plt.savefig('1_lsvi_scaling', bbox_inches='tight')
-	plt.show()
 
 	return
 
 def live_2_lsvi_H(env,Q):
 
-	disc_H = [1,5,10,20,50]
+	disc_H = [5,10,20,50]
 
 	colormap = plt.cm.gist_ncar
 	plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, len(disc_H))])
@@ -343,7 +342,7 @@ def live_2_lsvi_H(env,Q):
 
 def live_3_lsvi_buffersize(env,Q):
 
-	disc_Nbuffer = [50,200,500,1000,5000]
+	disc_Nbuffer = [200,500,1000,5000]
 
 	colormap = plt.cm.gist_ncar
 	plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, len(disc_Nbuffer))])
@@ -680,7 +679,7 @@ def live(env,Q):
 					Buffer = cache(Buffer,(s,a,r,sprime),finite = True)
 				s = sprime
 				rewared_thisep += r
-			theta = learn(Q,Buffer,theta,l, method = 'grlsvi',batchtype = 'random')
+			theta = learn(Q,Buffer,theta,l, method = 'lsvi_td',batchtype = 'random')
 			reward_ep.append(rewared_thisep)
 			reward_per_ep.append(np.mean(reward_ep[np.max([len(reward_ep)-100,0]):]))
 			print l,rewared_thisep
@@ -693,12 +692,12 @@ def live(env,Q):
 
 	return
 
-env = gym.make('FrozenLake-v0')
+env = gym.make('FrozenLake8x8-v0')
 Q = FunctionFamily()
 Q.type = 'linear'
 Q.dim = (env.observation_space.n,env.action_space.n)
 
-live(env,Q)
+# live(env,Q)
 
 # live_1_scale(env,Q)
 
@@ -714,7 +713,7 @@ live(env,Q)
 
 # live_7_lsvitd_alpha(env,Q)
 
-# live_101_act_eps(env,Q)
+live_101_act_eps(env,Q)
 
 
 
